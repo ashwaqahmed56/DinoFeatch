@@ -28,7 +28,7 @@ version = 2.0
 #   runtime deps are listed explicitly here (without them yt-dlp cannot open a
 #   single connection). Left out on purpose: brotli and pycryptodomex (compiled
 #   only) - yt-dlp has pure-python fallbacks for both.
-requirements = python3,flask,yt-dlp,certifi,urllib3,requests,mutagen
+requirements = python3,openssl,pyjnius,flask,yt-dlp,certifi,urllib3,requests,mutagen
 
 # optional: add `ffmpeg` to the line above for mp3 conversion + 1080p merging.
 # It makes the build much longer (ffmpeg is compiled from source).
