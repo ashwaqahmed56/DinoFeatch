@@ -1,21 +1,14 @@
-name: DinoFetch APK
+name: Build & Release DinoFetch Windows EXE
 
 on:
   workflow_dispatch:
   push:
     branches: [main, master]
-    paths:
-      - "android/**"
-      - "app.py"
-      - "media_downloader.py"
-      - "templates/**"
-      - "static/**"
 
 jobs:
-  apk:
-    name: Build debug APK
-    runs-on: ubuntu-22.04
-    timeout-minutes: 90
+  build-exe:
+    name: Build Windows EXE
+    runs-on: windows-latest
     permissions:
       contents: write
 
@@ -26,89 +19,18 @@ jobs:
         with:
           python-version: "3.11"
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Install system dependencies
+      - name: Install dependencies & PyInstaller
         run: |
-          sudo apt-get update
-          sudo apt-get install -y git zip unzip autoconf libtool pkg-config zlib1g-dev \
-            libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev \
-            libsqlite3-dev automake autopoint gettext
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
 
-      - name: Cache Buildozer & Android SDK/NDK
-        uses: actions/cache@v4
-        with:
-          path: ~/.buildozer
-          key: buildozer-${{ runner.os }}-${{ hashFiles('android/buildozer.spec') }}
-          restore-keys: |
-            buildozer-${{ runner.os }}-
-
-      - name: Install buildozer
+      - name: Build Single-File EXE
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install --upgrade "Cython<3.0" buildozer
+          python -m PyInstaller DinoFetch.spec --noconfirm --clean
 
-      - name: Stage app files into android/
-        run: |
-          cp app.py media_downloader.py android/
-          cp -r templates static android/
-          ls -la android/
-
-      - name: Build debug APK
-        working-directory: android
-        run: |
-          # Unset pre-installed NDK 27/30 from runner so p4a uses Buildozer's NDK r25b
-          unset ANDROID_NDK
-          unset ANDROID_NDK_HOME
-          unset ANDROID_NDK_ROOT
-          unset ANDROID_NDK_LATEST_HOME
-          set -o pipefail
-          if ! buildozer -v android debug 2>&1 | tee build.log; then
-            echo "================ BUILDOZER FAILED ================"
-            echo "Last 60 lines of build.log:"
-            tail -n 60 build.log
-            echo "=================================================="
-            exit 1
-          fi
-
-      - name: Verify APK generated
-        run: |
-          echo "Listing android/bin contents:"
-          ls -lh android/bin/
-          if ! ls android/bin/*.apk 1> /dev/null 2>&1; then
-            echo "ERROR: No APK found in android/bin/! Buildozer failed to create APK."
-            exit 1
-          fi
-
-      - name: Upload build log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: buildozer-build-log
-          path: android/build.log
-          if-no-files-found: ignore
-
-      - name: Publish APK to GitHub Releases
-        if: success()
+      - name: Publish EXE to GitHub Releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd android/bin
-          # Create the release tag if it does not already exist
-          gh release view v2.0 >/dev/null 2>&1 || \
-            gh release create v2.0 \
-              --title "DinoFetch v2.0 APK" \
-              --notes "Latest automatic build from commit ${{ github.sha }}."
-          # Upload or replace the APK asset
-          gh release upload v2.0 *.apk --clobber
-
-      - name: Upload APK artifact
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: DinoFetch-debug-apk
-          path: android/bin/*.apk
-          if-no-files-found: error
+          gh release view v2.0 2>$null || gh release create v2.0 --title "DinoFetch v2.0" --notes "Latest release build."
+          gh release upload v2.0 dist/DinoFetch.exe --clobber
