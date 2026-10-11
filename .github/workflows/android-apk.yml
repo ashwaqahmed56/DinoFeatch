@@ -66,7 +66,13 @@ jobs:
           unset ANDROID_NDK_ROOT
           unset ANDROID_NDK_LATEST_HOME
           set -o pipefail
-          buildozer -v android debug 2>&1 | tee build.log
+          if ! buildozer -v android debug 2>&1 | tee build.log; then
+            echo "================ BUILDOZER FAILED ================"
+            echo "Last 60 lines of build.log:"
+            tail -n 60 build.log
+            echo "=================================================="
+            exit 1
+          fi
 
       - name: Verify APK generated
         run: |
