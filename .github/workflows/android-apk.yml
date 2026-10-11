@@ -49,25 +49,26 @@ jobs:
           cp -r templates static android/
           ls -la android/
 
-      - name: Download Android SDK/NDK
-        working-directory: android
-        run: yes | buildozer -v android sdk
-
       - name: Build debug APK
         working-directory: android
         run: buildozer -v android debug 2>&1 | tee build.log
 
-      - name: Publish APK to Releases
+      - name: Publish APK to GitHub Releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd android/bin
-          gh release view apk-v2.0 >/dev/null 2>&1 || \
-            gh release create apk-v2.0 --title "DinoFetch v2.0 APK" \
-              --notes "Auto-built from main. arm64-v8a." --target main
-          gh release upload apk-v2.0 *.apk --clobber
+          # Create the release tag if it does not already exist
+          gh release view v2.0 >/dev/null 2>&1 || \
+            gh release create v2.0 \
+              --title "DinoFetch v2.0 APK" \
+              --notes "Latest automatic build from commit ${{ github.sha }}." \
+              --target "${{ github.ref_name }}"
 
-      - name: Upload APK
+          # Upload or replace the APK asset
+          gh release upload v2.0 ./*.apk --clobber
+
+      - name: Upload APK to Actions Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: DinoFetch-debug-apk
