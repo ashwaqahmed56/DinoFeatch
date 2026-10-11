@@ -60,7 +60,7 @@ jobs:
       - name: Build debug APK
         working-directory: android
         run: |
-          # Unset pre-installed NDK 27/30 so p4a uses Buildozer's NDK r25b
+          # Unset pre-installed NDK 27/30 from runner so p4a uses Buildozer's NDK r25b
           unset ANDROID_NDK
           unset ANDROID_NDK_HOME
           unset ANDROID_NDK_ROOT
