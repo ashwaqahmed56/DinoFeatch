@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>dinofetch://v2.0 — media.fetch()</title>
+<meta name="theme-color" content="#04060c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DinoFetch">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<style>
+:root{
+  --bg:#04060c; --panel:#0a0f1a; --panel2:#0d1424;
+  --line:#1b2740; --grn:#00ff88; --cyn:#00e5ff; --amb:#ffb300; --red:#ff3355;
+  --txt:#c9d6e8; --dim:#5b6b87;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:Consolas,'Cascadia Code','JetBrains Mono',Menlo,monospace;
+  min-height:100vh;font-size:14px;
+  background-image:linear-gradient(rgba(0,229,255,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,229,255,.045) 1px,transparent 1px);
+  background-size:28px 28px;
+  padding-bottom:48px;
+}
+.wrap{max-width:600px;margin:0 auto;padding:0 14px}
+/* boot header */
+.boot{border:1px solid var(--line);background:rgba(10,15,26,.92);border-radius:10px;
+  margin:16px 0 12px;padding:14px 16px;box-shadow:0 0 24px rgba(0,255,136,.07)}
+.boot .row1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.led{width:9px;height:9px;border-radius:50%;background:var(--grn);box-shadow:0 0 8px var(--grn);animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.35}}
+.ps1{color:var(--grn);font-weight:bold}
+.cmd{color:#fff;font-weight:bold}
+.ver{color:var(--dim);font-size:12px;margin-top:6px}
+.ver b{color:var(--cyn)}
+/* sections */
+.sec{border:1px solid var(--line);background:rgba(10,15,26,.92);border-radius:10px;margin-top:12px;overflow:hidden}
+.sec-h{padding:10px 14px;border-bottom:1px solid var(--line);color:var(--cyn);
+  font-size:12px;letter-spacing:1px;background:rgba(0,229,255,.04)}
+.sec-b{padding:14px}
+/* target select */
+.targets{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.tgt{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:12px 4px;
+  text-align:center;cursor:pointer;transition:.15s;user-select:none}
+.tgt:hover{border-color:var(--cyn)}
+.tgt.on{border-color:var(--grn);background:rgba(0,255,136,.08);box-shadow:inset 0 0 18px rgba(0,255,136,.08)}
+.tgt .id{display:block;font-size:11px;color:var(--dim)}
+.tgt .nm{display:block;font-weight:bold;margin-top:4px;font-size:13px}
+.tgt.on .nm{color:var(--grn)}
+/* inputs */
+.lbl{display:block;font-size:12px;color:var(--dim);margin:12px 0 6px}
+.lbl::before{content:'> ';color:var(--grn)}
+.in{background:#02040a;border:1px solid var(--line);color:#fff;border-radius:8px;
+  width:100%;padding:13px 12px;font-family:inherit;font-size:13px;outline:none}
+.in:focus{border-color:var(--grn);box-shadow:0 0 0 1px var(--grn)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.seg button{font-family:inherit;background:#02040a;color:var(--dim);border:1px solid var(--line);
+  border-radius:8px;padding:11px;font-size:13px;font-weight:bold;cursor:pointer}
+.seg button.on{color:#04120a;background:var(--grn);border-color:var(--grn)}
+select.in{appearance:none}
+.exec{margin-top:14px;width:100%;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;
+  color:#04120a;background:linear-gradient(90deg,var(--grn),var(--cyn));
+  border:0;border-radius:8px;padding:14px;letter-spacing:.5px}
+.exec:disabled{opacity:.5;cursor:wait}
+.exec:hover:not(:disabled){filter:brightness(1.1)}
+/* console out */
+.term{display:none;margin-top:12px;background:#02040a;border:1px solid var(--line);
+  border-radius:8px;padding:12px;font-size:12.5px;line-height:1.7}
+.pbar{color:var(--grn);word-break:break-all}
+.pline{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pok{color:var(--grn);font-weight:bold}
+.perr{color:var(--red);font-weight:bold}
+/* library */
+.f{border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin-bottom:8px;
+  display:flex;align-items:center;gap:10px;background:var(--panel2)}
+.f .tag{font-size:10px;font-weight:bold;padding:3px 7px;border-radius:5px;flex-shrink:0}
+.tag.mp3{background:rgba(0,255,136,.15);color:var(--grn);border:1px solid rgba(0,255,136,.4)}
+.tag.mp4{background:rgba(0,229,255,.12);color:var(--cyn);border:1px solid rgba(0,229,255,.4)}
+.f .nm{flex:1;min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.f .sz{display:block;font-size:10px;color:var(--dim)}
+.f a{color:var(--grn);text-decoration:none;border:1px solid var(--grn);border-radius:6px;
+  padding:6px 10px;font-size:12px;font-weight:bold;flex-shrink:0}
+.f a:hover{background:var(--grn);color:#04120a}
+.libh{font-size:13px;color:#fff;margin:14px 2px 8px}
+.libh span{color:var(--dim);font-size:11px}
+.empty{color:var(--dim);font-size:12px;margin:0 2px 8px}
+.note{margin-top:12px;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;
+  font-size:11.5px;color:var(--dim);line-height:1.7}
+.note b{color:var(--amb)}
+footer{text-align:center;color:var(--dim);font-size:11px;margin-top:20px}
+footer .cur{display:inline-block;width:7px;height:12px;background:var(--grn);vertical-align:-1px;animation:blink 1s infinite}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="boot">
+    <div class="row1"><span class="led"></span><span class="ps1">root@dinofetch:~$</span><span class="cmd">./dinofetch --v2.0</span></div>
+    <div class="ver">engine <b>yt-dlp</b> Â· targets <b>youtube|instagram|facebook</b> Â· out <b>mp4|mp3</b> Â· status <b style="color:var(--grn)">ONLINE</b></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">[1] SELECT TARGET</div>
+    <div class="sec-b">
+      <div class="targets">
+        <div class="tgt on" data-p="youtube"><span class="id">[01]</span><span class="nm">YOUTUBE</span></div>
+        <div class="tgt" data-p="instagram"><span class="id">[02]</span><span class="nm">INSTAGRAM</span></div>
+        <div class="tgt" data-p="facebook"><span class="id">[03]</span><span class="nm">FACEBOOK</span></div>
+      </div>
+      <span class="lbl">paste_url</span>
+      <input id="url" class="in" placeholder="https://...">
+      <span class="lbl">mode</span>
+      <div class="seg">
+        <button id="bVideo" class="on">--mode=video</button>
+        <button id="bAudio">--mode=audio</button>
+      </div>
+      <span class="lbl" id="qlbl">bitrate</span>
+      <select id="quality" class="in" style="margin-top:8px">
+        <option value="192" selected>192 kbps // recommended</option>
+        <option value="128">128 kbps // small</option>
+        <option value="256">256 kbps</option>
+        <option value="320">320 kbps // max</option>
+      </select>
+      <button class="exec" id="go">$ execute --download</button>
+      <div class="term" id="term"><div class="pline" id="tline">awaiting input_</div><div class="pbar" id="tbar"></div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">[2] LOCAL STORAGE <span id="refresh" style="float:right;cursor:pointer;color:var(--grn)">[refresh]</span></div>
+    <div class="sec-b" id="lib"></div>
+  </div>
+
+  <div class="note">paths â†’ <b>downloads/youtube</b> Â· <b>downloads/instagram</b> Â· <b>downloads/facebook</b><br>
+  auth â†’ private reels may need <b>--cookies cookies.txt</b> via terminal.</div>
+
+  <footer>dinofetch v2.0 // stable <span class="cur"></span></footer>
+</div>
+
+<script>
+let platform='youtube', mode='video';
+document.querySelectorAll('.tgt').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tgt').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on'); platform=t.dataset.p;
+});
+const bV=document.getElementById('bVideo'), bA=document.getElementById('bAudio'),
+      q=document.getElementById('quality'), qlbl=document.getElementById('qlbl');
+function setMode(m){mode=m;
+  bV.classList.toggle('on',m==='video'); bA.classList.toggle('on',m==='audio');
+  const audio=m==='audio'; q.style.display=audio?'block':'none'; qlbl.style.display=audio?'block':'none';
+}
+bV.onclick=()=>setMode('video'); bA.onclick=()=>setMode('audio'); setMode('video');
+
+const go=document.getElementById('go'), term=document.getElementById('term'),
+      tline=document.getElementById('tline'), tbar=document.getElementById('tbar');
+function renderBar(p){const n=20,f=Math.round(p/100*n);return '['+'â–ˆ'.repeat(f)+'â–‘'.repeat(n-f)+'] '+Math.round(p)+'%';}
+
+go.onclick=async()=>{
+  const url=document.getElementById('url').value.trim();
+  if(!url){tline.textContent='ERR: empty_url';term.style.display='block';return}
+  go.disabled=true; term.style.display='block';
+  tline.textContent='> fetching :: '+url.slice(0,60); tbar.textContent='[â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘] 0%';
+  const r=await fetch('/api/download',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({url,platform,mode,quality:q.value})});
+  const d=await r.json();
+  if(d.error){tline.innerHTML='<span class="perr">ERR: '+d.error+'</span>';go.disabled=false;return}
+  poll(d.job_id);
+};
+async function poll(id){
+  const t=setInterval(async()=>{
+    const r=await fetch('/api/status/'+id); const j=await r.json();
+    const p=j.progress||0;
+    tbar.textContent=renderBar(p);
+    if(j.filename) tline.textContent='> '+j.filename.slice(0,70);
+    if(j.status==='done'){clearInterval(t);go.disabled=false;
+      tline.innerHTML='<span class="pok">[OK] done</span>'; loadLib();}
+    if(j.status==='error'){clearInterval(t);go.disabled=false;
+      tline.innerHTML='<span class="perr">[FAIL] '+(j.result&&j.result.error||'error').slice(0,120)+'</span>';}
+  },1200);
+}
+async function loadLib(){
+  const r=await fetch('/api/library'); const lib=await r.json();
+  let h='';
+  for(const p of ['youtube','instagram','facebook']){
+    const files=lib[p]||[];
+    h+=`<div class="libh">~/downloads/${p} <span>(${files.length} files)</span></div>`;
+    if(!files.length) h+=`<div class="empty">-- empty --</div>`;
+    files.slice().reverse().slice(0,20).forEach(f=>{
+      const ext=f.name.split('.').pop().toLowerCase();
+      h+=`<div class="f"><span class="tag ${ext}">${ext}</span><div class="nm">${f.name}<span class="sz">${f.size_mb} MB</span></div><a href="/files/${p}/${encodeURIComponent(f.name)}" download>GET</a></div>`;
+    });
+  }
+  document.getElementById('lib').innerHTML=h;
+}
+document.getElementById('refresh').onclick=loadLib;
+loadLib();
+// PWA: register service worker (app shell works offline; downloads need connection)
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
