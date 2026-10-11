@@ -28,7 +28,7 @@ version = 2.0
 #   runtime deps are listed explicitly here (without them yt-dlp cannot open a
 #   single connection). Left out on purpose: brotli and pycryptodomex (compiled
 #   only) - yt-dlp has pure-python fallbacks for both.
-requirements = python3,flask,yt-dlp,yt-dlp-ejs,certifi,urllib3,requests,mutagen,websockets
+requirements = python3,flask,yt-dlp,certifi,urllib3,requests,mutagen
 
 # optional: add `ffmpeg` to the line above for mp3 conversion + 1080p merging.
 # It makes the build much longer (ffmpeg is compiled from source).
@@ -107,6 +107,7 @@ p4a.port = 5000
 #
 # Buildozer specific section
 #
+[buildozer]
 
 # (int) Log level (0 = error only, 1 = info, 2 = debug (with command output))
 log_level = 2
