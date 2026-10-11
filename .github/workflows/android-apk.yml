@@ -22,15 +22,26 @@ jobs:
       - name: Install dependencies & PyInstaller
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller
+          pip install -r requirements.txt pyinstaller pillow
 
       - name: Build Single-File EXE
         run: |
           python -m PyInstaller DinoFetch.spec --noconfirm --clean
 
+      - name: Verify EXE generated
+        run: |
+          Get-ChildItem -Path dist\DinoFetch.exe
+
       - name: Publish EXE to GitHub Releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release view v2.0 2>$null || gh release create v2.0 --title "DinoFetch v2.0" --notes "Latest release build."
-          gh release upload v2.0 dist/DinoFetch.exe --clobber
+          gh release view v2.0 2>$null || gh release create v2.0 --title "DinoFetch v2.0" --notes "Latest Windows desktop release."
+          gh release upload v2.0 dist\DinoFetch.exe --clobber
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DinoFetch-Windows-EXE
+          path: dist\DinoFetch.exe
+          if-no-files-found: error
