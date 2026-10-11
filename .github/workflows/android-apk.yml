@@ -31,17 +31,23 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Cache Android SDK/NDK
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip autoconf libtool pkg-config zlib1g-dev cmake libffi-dev libssl-dev automake autopoint gettext
+
+      - name: Cache Buildozer & Android SDK/NDK
         uses: actions/cache@v4
         with:
           path: ~/.buildozer
-          key: buildozer-${{ hashFiles('android/buildozer.spec') }}
-          restore-keys: buildozer-
+          key: buildozer-${{ runner.os }}-${{ hashFiles('android/buildozer.spec') }}
+          restore-keys: |
+            buildozer-${{ runner.os }}-
 
       - name: Install buildozer
         run: |
-          python -m pip install --upgrade pip wheel
-          pip install buildozer
+          python -m pip install --upgrade pip setuptools wheel
+          pip install --upgrade "Cython<3.0" buildozer
 
       - name: Stage app files into android/
         run: |
@@ -51,24 +57,31 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: buildozer -v android debug 2>&1 | tee build.log
+        run: |
+          set -o pipefail
+          buildozer -v android debug 2>&1 | tee build.log
 
-      - name: Publish APK to GitHub Releases
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildozer-build-log
+          path: android/build.log
+          if-no-files-found: ignore
+
+      - name: Publish APK to Releases
+        if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd android/bin
-          # Create the release tag if it does not already exist
-          gh release view v2.0 >/dev/null 2>&1 || \
-            gh release create v2.0 \
-              --title "DinoFetch v2.0 APK" \
-              --notes "Latest automatic build from commit ${{ github.sha }}." \
-              --target "${{ github.ref_name }}"
+          gh release view apk-v2.0 >/dev/null 2>&1 || \
+            gh release create apk-v2.0 --title "DinoFetch v2.0 APK" \
+              --notes "Auto-built APK (arm64-v8a)."
+          gh release upload apk-v2.0 *.apk --clobber
 
-          # Upload or replace the APK asset
-          gh release upload v2.0 ./*.apk --clobber
-
-      - name: Upload APK to Actions Artifacts
+      - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: DinoFetch-debug-apk
