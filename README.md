@@ -1,7 +1,7 @@
 # 🦖 DinoFetch v2.0
 
 Download **YouTube / Instagram / Facebook** as **Video (MP4)** or **Audio (MP3)**.
-Runs as a Windows `.exe` or as an Android app — same engine, same UI.
+Runs as a Windows `.exe` — same engine, same UI. Android APK automation is paused for now.
 
 ```
 downloads/
@@ -32,8 +32,8 @@ Output: `dist\DinoFetch.exe` (~60 MB, single file).
 
 ### Phone browser access (optional)
 
-`app.py` is the same engine as a small web server, still used for the Android app
-and handy for grabbing files from your phone:
+`app.py` is the same engine as a small web server, handy for grabbing files
+from your phone:
 
 ```bat
 python app.py
@@ -41,35 +41,15 @@ python app.py
 
 It prints a LAN address (`http://192.168.1.5:5000`) for phones on the same WiFi.
 
-## 🤖 Android — `DinoFetch.apk`
+## 🤖 Android — paused for now
 
-The APK is built in the cloud by GitHub Actions (python-for-android + a native
-WebView), because building it needs a Linux toolchain.
+There is **no Android APK build enabled right now**. The current GitHub
+automation builds/releases only the Windows EXE.
 
-1. Push this folder to a GitHub repo. Use `git` (or GitHub Desktop / CLI) rather
-   than the browser drag-and-drop, so the hidden `.github/` folder lands with it —
-   the workflow **must** exist at `.github/workflows/android-apk.yml`.
-2. Open the repo → **Actions** tab. If it says "workflows aren't running yet",
-   click *I understand, enable them*.
-3. Click **DinoFetch APK → Run workflow** (it also runs on every push to `main`).
-4. First run downloads the Android SDK/NDK (~2-3 GB): expect **20-40 min**.
-   Later runs use the cache and are much quicker.
-5. When it goes green, scroll to the bottom of the run page → **Artifacts →
-   DinoFetch-debug-apk** → unzip → `dinofetch-2.0-arm64-v8a-debug.apk`.
-6. Copy it to the phone, tap it, allow "install from unknown sources".
-
-The app runs the downloader **on the phone itself** — no PC needed. Files land in
-the app's private folder; the app shows the exact path and has an *open folder*
-button.
-
-> Android notes:
-> - `arm64-v8a` only (any phone from ~2017+). Add `armeabi-v7a` to `android.archs`
->   in `android/buildozer.spec` for older devices.
-> - The default build has **no ffmpeg** (it would double the build time), so audio
->   is saved as `.m4a`/`.webm` and video as a progressive `.mp4` (max ~720p).
->   For mp3 + 1080p merging, add `,ffmpeg` to `requirements` in
->   `android/buildozer.spec` — expect a much longer build.
-> - Private/age-restricted reels need cookies and are unreliable on Android.
+The Android source files are still in the repo for later (`android/`,
+`app.py`, `media_downloader.py`, `templates/`, `static/`). If you want the
+same download engine on a phone today, use **Phone browser access (optional)**
+above over the same WiFi.
 
 ## ⌨️ Terminal version
 
@@ -115,8 +95,8 @@ media_downloader.py     yt-dlp core: platform detection, formats, output folders
 download.py             terminal front-end
 templates/index.html    web UI (phone / Android)
 static/                 PWA manifest, service worker, icons
-android/                APK entry point + buildozer config
-.github/workflows/      cloud APK build
+android/                future APK entry point + buildozer config
+.github/workflows/      Windows EXE automation
 DinoFetch.spec          PyInstaller build recipe
 build_exe.bat           one-click exe build
 ```
@@ -124,5 +104,4 @@ build_exe.bat           one-click exe build
 ## ⚖️ Notes
 
 Personal / fair-use only. Respect the ToS and copyright of YouTube, Instagram and
-Facebook. ffmpeg is bundled via `imageio-ffmpeg` in the Windows build; the Android
-build falls back to non-converting formats when ffmpeg is absent.
+Facebook. ffmpeg is bundled via `imageio-ffmpeg` in the Windows build.
